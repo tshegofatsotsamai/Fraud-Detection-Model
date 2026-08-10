@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Peak Transformers · Fraud Decision Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --bg-base: #02040a;
+            --bg-surface: #0d1117;
+            --bg-elevated: #161b22;
+            --bg-hover: #1f242c;
+            --bg-inset: #010409;
+            --border-subtle: #21262d;
+            --border-default: #30363d;
+            --border-hover: #484f58;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --text-tertiary: #484f58;
+            --accent-blue: #58a6ff;
+            --accent-purple: #a371f7;
+            --accent-green: #3fb950;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+            --blue-dim: rgba(88, 166, 255, 0.12);
+            --purple-dim: rgba(163, 113, 247, 0.12);
+            --green-dim: rgba(63, 185, 80, 0.12);
+            --orange-dim: rgba(210, 153, 34, 0.12);
+            --red-dim: rgba(248, 81, 73, 0.12);
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.7);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-default);
+            border-radius: 3px;
+        }
+
+        .app {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .sim-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .sim-header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sim-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .sim-header .subtitle {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+        }
+
+        /* Mode Switcher */
+        .mode-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+        .mode-btn {
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: var(--font-sans);
+        }
+        .mode-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+        .mode-btn.active {
+            background: var(--blue-dim);
+            color: var(--accent-blue);
+            border-color: rgba(88, 166, 255, 0.3);
+            box-shadow: 0 0 16px rgba(88, 166, 255, 0.1);
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        .panel:hover {
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-md);
+        }
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-body {
+            padding: 20px;
+        }
+
+        /* Grid layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-md);
+        }
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .kpi-card:hover::after {
+            opacity: 1;
+        }
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            letter-spacing: -1px;
+        }
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 6px;
+        }
+        .kpi-change {
+            font-size: 12px;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .kpi-change.up {
+            color: var(--accent-green);
+        }
+        .kpi-change.down {
+            color: var(--accent-red);
+        }
+
+        /* Confusion Matrix Business Translation */
+        .cm-business {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .cm-cell {
+            padding: 20px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .cm-cell:hover {
+            transform: scale(1.03);
+        }
+        .cm-cell .cm-number {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+        }
+        .cm-cell .cm-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-top: 6px;
+        }
+        .cm-cell .cm-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+        .cm-cell.tn {
+            background: var(--green-dim);
+            border-color: rgba(63, 185, 80, 0.2);
+        }
+        .cm-cell.tn .cm-number {
+            color: var(--accent-green);
+        }
+        .cm-cell.fp {
+            background: var(--orange-dim);
+            border-color: rgba(210, 153, 34, 0.2);
+        }
+        .cm-cell.fp .cm-number {
+            color: var(--accent-orange);
+        }
+        .cm-cell.fn {
+            background: var(--red-dim);
+            border-color: rgba(248, 81, 73, 0.2);
+        }
+        .cm-cell.fn .cm-number {
+            color: var(--accent-red);
+        }
+        .cm-cell.tp {
+            background: rgba(63, 185, 80, 0.15);
+            border-color: rgba(63, 185, 80, 0.3);
+            box-shadow: 0 0 16px rgba(63, 185, 80, 0.08);
+        }
+        .cm-cell.tp .cm-number {
+            color: var(--accent-green);
+        }
+
+        /* Transaction Stream */
+        .tx-stream {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .tx-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.15s;
+            cursor: pointer;
+            animation: slideIn 0.3s ease;
+        }
+        .tx-item:hover {
+            background: var(--bg-hover);
+        }
+        .tx-item:last-child {
+            border-bottom: none;
+        }
+        .tx-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+        .tx-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .tx-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .tx-meta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+            margin-top: 2px;
+        }
+        .tx-amount {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+        .tx-risk {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+        }
+        .risk-track {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-hover);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .risk-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+        .risk-text {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        /* Decision Engine */
+        .decision-flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+        .flow-box {
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-default);
+            background: var(--bg-elevated);
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 120px;
+            position: relative;
+        }
+        .flow-box.active {
+            border-color: var(--accent-blue);
+            background: var(--blue-dim);
+            color: var(--accent-blue);
+            box-shadow: 0 0 16px rgba(88, 166, 255, 0.15);
+        }
+        .flow-box.critical {
+            border-color: var(--accent-red);
+            background: var(--red-dim);
+            color: var(--accent-red);
+            box-shadow: 0 0 16px rgba(248, 81, 73, 0.15);
+        }
+        .flow-box.success {
+            border-color: var(--accent-green);
+            background: var(--green-dim);
+            color: var(--accent-green);
+        }
+        .flow-arrow {
+            color: var(--text-tertiary);
+            font-size: 18px;
+        }
+
+        /* Probability Gauge */
+        .gauge-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .gauge-svg {
+            width: 200px;
+            height: 120px;
+        }
+        .gauge-value {
+            font-size: 42px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            margin-top: -15px;
+        }
+        .gauge-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Explainability */
+        .explain-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .explain-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+        }
+        .explain-check {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--green-dim);
+            color: var(--accent-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .explain-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .explain-text strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Business Impact Calculator */
+        .impact-calc {
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.04), rgba(163, 113, 247, 0.04));
+            border: 1px solid rgba(88, 166, 255, 0.12);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            text-align: center;
+        }
+        .impact-calc .impact-number {
+            font-size: 48px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--accent-green);
+            letter-spacing: -2px;
+        }
+        .impact-calc .impact-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+        .impact-calc .impact-formula {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-default);
+        }
+
+        /* Action Buttons */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .action-btn {
+            padding: 14px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-default);
+            background: var(--bg-elevated);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+        .action-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+        .action-btn.primary {
+            border-color: var(--accent-blue);
+            background: var(--blue-dim);
+            color: var(--accent-blue);
+        }
+        .action-btn.primary:hover {
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);
+        }
+        .action-btn.danger {
+            border-color: var(--accent-red);
+            background: var(--red-dim);
+            color: var(--accent-red);
+        }
+        .action-btn.danger:hover {
+            box-shadow: 0 0 20px rgba(248, 81, 73, 0.2);
+        }
+        .action-btn.success {
+            border-color: var(--accent-green);
+            background: var(--green-dim);
+            color: var(--accent-green);
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: toastIn 0.3s ease;
+            max-width: 380px;
+            position: relative;
+        }
+        .toast.success {
+            border-left: 3px solid var(--accent-green);
+        }
+        .toast.error {
+            border-left: 3px solid var(--accent-red);
+        }
+        .toast.info {
+            border-left: 3px solid var(--accent-blue);
+        }
+        @keyframes toastIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Badge */
+        .badge {
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .badge-critical {
+            background: var(--red-dim);
+            color: var(--accent-red);
+        }
+        .badge-warn {
+            background: var(--orange-dim);
+            color: var(--accent-orange);
+        }
+        .badge-safe {
+            background: var(--green-dim);
+            color: var(--accent-green);
+        }
+        .badge-blue {
+            background: var(--blue-dim);
+            color: var(--accent-blue);
+        }
+
+        /* Sim step indicator */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+        }
+        .step.active {
+            color: var(--accent-blue);
+        }
+        .step::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-default);
+        }
+        .step.active::before {
+            background: var(--accent-blue);
+            box-shadow: 0 0 8px var(--accent-blue);
+        }
+        .step.done::before {
+            background: var(--accent-green);
+        }
+        .step.done {
+            color: var(--text-secondary);
+        }
+
+        /* Narrative box */
+        .narrative {
+            background: var(--bg-elevated);
+            border-left: 3px solid var(--accent-blue);
+            padding: 16px 20px;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+        .narrative strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            .cm-business {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hidden sections */
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .section.active {
+            display: block;
+        }
+
+        /* Gauge arc pulse */
+        @keyframes gaugePulse {
+            0%,
+            100% {
+                filter: drop-shadow(0 0 2px rgba(248, 81, 73, 0.2));
+            }
+            50% {
+                filter: drop-shadow(0 0 10px rgba(248, 81, 73, 0.5));
+            }
+        }
+        .gauge-critical .gauge-svg {
+            animation: gaugePulse 2s ease-in-out infinite;
+        }
+
+        /* smoother transition for gauge text */
+        #analystGaugeText {
+            transition: none;
+        }
+    </style>
+    <base target="_blank" />
+</head>
+<body>
+
+    <div class="app">
+        <!-- Header -->
+        <div class="sim-header">
+            <h1>Peak Transformers · Intelligent Fraud Operations Platform</h1>
+            <p>Presented by the Chief Risk Officer: How Standard Bank balances real-time fraud prevention, regulatory compliance, and seamless customer experience using AI-driven decision support.</p>
+            <div class="subtitle">Live Model Performance: TN=127,027 · FP=56 · FN=16 · TP=154 | Avg Fraud Value: R25,000</div>
+        </div>
+
+        <!-- Mode Switcher -->
+        <div class="mode-bar">
+            <button class="mode-btn active" onclick="switchMode('executive',this)">Executive Briefing</button>
+            <button class="mode-btn" onclick="switchMode('matrix',this)">Risk &amp; Impact Matrix</button>
+            <button class="mode-btn" onclick="switchMode('workflow',this)">Customer Journey &amp; Workflow</button>
+            <button class="mode-btn" onclick="switchMode('analyst',this)">Analyst Decision Support</button>
+            <button class="mode-btn" onclick="switchMode('live',this)">Real-Time Operations</button>
+        </div>
+
+        <!-- ==================== EXECUTIVE STORY ==================== -->
+        <div class="section active" id="section-executive">
+            <div class="grid-4">
+                <div class="kpi-card">
+                    <div class="kpi-value" style="color:var(--accent-green)">R3.85M</div>
+                    <div class="kpi-label">Capital Protected Today</div>
+                    <div class="kpi-change up">154 transactions × R25,000</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" style="color:var(--accent-blue)">91%</div>
+                    <div class="kpi-label">Fraud Interception Rate</div>
+                    <div class="kpi-change up">154 of 170 frauds caught</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" style="color:var(--accent-orange)">56</div>
+                    <div class="kpi-label">Friction Events (False Positives)</div>
+                    <div class="kpi-change down">0.04% of all transactions</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" style="color:var(--accent-red)">16</div>
+                    <div class="kpi-label">Escaped Fraud (Model Gap)</div>
+                    <div class="kpi-change down">R400,000 potential exposure</div>
+                </div>
+            </div>
+
+            <div class="narrative">
+                <strong>The Strategic Context:</strong> As Standard Bank's digital banking footprint grows, so does the sophistication of financial fraud. Traditional rule-based systems generate excessive false positives, frustrating customers and overwhelming our fraud analysts. Sentinel AI addresses this by transforming raw machine learning outputs into actionable business intelligence. Today, out of 170 attempted frauds, Sentinel AI successfully intercepted <strong>154</strong>, protecting <strong>R3.85 million</strong> in customer funds, while ensuring 99.96% of genuine customers experienced zero friction.
+            </div>
+
+            <div class="panel" style="margin-top:20px; border-color:var(--accent-blue);">
+                <div class="panel-header"><div class="panel-title">🚀 The Strategic Vision</div></div>
+                <div class="panel-body">
+                    <div style="font-size:14px; color:var(--text-secondary); line-height:1.8;">
+                        Sentinel AI is not merely a fraud classifier; it is an <strong>intelligent fraud operations platform</strong>. It empowers Standard Bank to detect, explain, prioritize, and respond to fraud in real time. By balancing rigorous security with a seamless customer experience, we are not just preventing losses—we are actively building <strong>trust in digital banking</strong>. This platform ensures our fraud analysts are equipped to make faster, more consistent decisions, turning a traditional cost center into a strategic competitive advantage.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== CONFUSION MATRIX ==================== -->
+        <div class="section" id="section-matrix">
+            <div class="narrative">
+                <strong>Translating ML Metrics to Executive Risk Language:</strong> To a data scientist, these are TP, TN, FP, and FN. To the Standard Bank Executive Committee, they represent <strong>capital protected</strong>, <strong>customer trust preserved</strong>, <strong>manageable friction</strong>, and <strong>targeted model improvement areas</strong>. Click any cell to see its direct business impact.
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">🔬 Data Science View</div></div>
+                    <div class="panel-body">
+                        <div class="cm-business">
+                            <div class="cm-cell tn" onclick="showMatrixDetail('tn')">
+                                <div class="cm-number">127,027</div>
+                                <div class="cm-label">Genuine Transactions Cleared</div>
+                                <div class="cm-desc">Model correctly identified safe transactions. 99.96% zero friction.</div>
+                            </div>
+                            <div class="cm-cell fp" onclick="showMatrixDetail('fp')">
+                                <div class="cm-number">56</div>
+                                <div class="cm-label">Manageable Friction Events</div>
+                                <div class="cm-desc">Legitimate transactions flagged for extra verification. Resolved via OTP.</div>
+                            </div>
+                            <div class="cm-cell fn" onclick="showMatrixDetail('fn')">
+                                <div class="cm-number">16</div>
+                                <div class="cm-label">Escaped Fraud Cases</div>
+                                <div class="cm-desc">Frauds that evaded initial detection. Primary target for model refinement.</div>
+                            </div>
+                            <div class="cm-cell tp" onclick="showMatrixDetail('tp')">
+                                <div class="cm-number">154</div>
+                                <div class="cm-label">Frauds Successfully Intercepted</div>
+                                <div class="cm-desc">Fraudulent transactions stopped before funds left the bank, saving R3.85M.</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:16px; font-size:11px; color:var(--text-tertiary); font-weight:600; letter-spacing:0.5px;">
+                            <span>Actual: Non-Fraud</span><span>Actual: Fraud</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">🏦 Business Translation</div></div>
+                    <div class="panel-body" id="matrixDetail">
+                        <div style="text-align:center; padding:40px; color:var(--text-tertiary);">
+                            <div style="font-size:48px; margin-bottom:16px;">👆</div>
+                            <div style="font-size:14px; font-weight:600;">Click a matrix cell to see its direct business impact</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">✅ True Positives — Capital Protected</div></div>
+                    <div class="panel-body">
+                        <div style="font-size:28px; font-weight:800; font-family:var(--font-mono); color:var(--accent-green); margin-bottom:8px;">154 Frauds Stopped</div>
+                        <div style="color:var(--text-secondary); font-size:13px; line-height:1.7; margin-bottom:16px;">
+                            Each of these 154 transactions was genuinely fraudulent. The model flagged them before money left the bank. At an average of <strong>R25,000 per fraud</strong>, that's <strong>R3.85 million protected</strong> in a single day.
+                        </div>
+                        <div style="background:var(--green-dim); border:1px solid rgba(63,185,80,0.2); border-radius:var(--radius-md); padding:16px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Business Outcome</div>
+                            <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">Fraud analysts reviewed these prioritized alerts, confirmed the fraud pattern using explainable AI, blocked the transactions, and initiated recovery procedures. Customer accounts were protected and regulatory reporting was satisfied.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">❌ False Negatives — The Optimization Target</div></div>
+                    <div class="panel-body">
+                        <div style="font-size:28px; font-weight:800; font-family:var(--font-mono); color:var(--accent-red); margin-bottom:8px;">16 Frauds Escaped</div>
+                        <div style="color:var(--text-secondary); font-size:13px; line-height:1.7; margin-bottom:16px;">
+                            These 16 transactions were fraudulent but the model did not flag them. They represent <strong>direct financial exposure</strong>, reimbursement costs, investigation hours, and regulatory scrutiny. At R25,000 average per fraud, that's <strong>R400,000 at risk</strong>.
+                        </div>
+                        <div style="background:var(--red-dim); border:1px solid rgba(248,81,73,0.2); border-radius:var(--radius-md); padding:16px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Business Impact</div>
+                            <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">Potential loss: <strong>R400,000</strong>. However, Sentinel AI's explainability logs these exact patterns, making this our #1 targeted optimization area for the next model iteration to drive this number toward zero.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">⚠️ False Positives — Managed Customer Friction</div></div>
+                    <div class="panel-body">
+                        <div style="font-size:28px; font-weight:800; font-family:var(--font-mono); color:var(--accent-orange); margin-bottom:8px;">56 Unnecessary Flags</div>
+                        <div style="color:var(--text-secondary); font-size:13px; line-height:1.7; margin-bottom:16px;">
+                            These 56 legitimate transactions were flagged. Instead of bluntly blocking them, the bank initiated <strong>step-up authentication (OTP verification)</strong>. Customers entered their codes and transactions proceeded. <strong>Zero financial loss. Zero permanent blocks.</strong>
+                        </div>
+                        <div style="background:var(--orange-dim); border:1px solid rgba(210,153,34,0.2); border-radius:var(--radius-md); padding:16px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-orange); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">The Trade-off</div>
+                            <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">The model intentionally allows a small number of additional security checks in exchange for detecting over 90% of fraudulent activity. <strong>56 extra OTPs</strong> is a highly optimized, acceptable trade-off for <strong>R3.85M saved</strong>.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">✅ True Negatives — Seamless Customer Experience</div></div>
+                    <div class="panel-body">
+                        <div style="font-size:28px; font-weight:800; font-family:var(--font-mono); color:var(--accent-green); margin-bottom:8px;">127,027 Customers Protected</div>
+                        <div style="color:var(--text-secondary); font-size:13px; line-height:1.7; margin-bottom:16px;">
+                            These are the vast majority of transactions — legitimate customers going about their day. The model correctly identified them as safe, allowing them to proceed without interruption, friction, or delay.
+                        </div>
+                        <div style="background:var(--green-dim); border:1px solid rgba(63,185,80,0.2); border-radius:var(--radius-md); padding:16px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Customer Experience</div>
+                            <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">99.96% of genuine customers experienced <strong>zero interruption</strong>. They paid bills, transferred money, and made purchases without ever knowing Sentinel AI was watching. Trust is preserved.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== DECISION WORKFLOW ==================== -->
+        <div class="section" id="section-workflow">
+            <div class="narrative">
+                <strong>The AI-Assisted Customer Journey:</strong> Sentinel AI does not blindly "block" or "allow" transactions. It acts as an intelligent decision support layer. It evaluates every transaction, assigns a dynamic probability score, and routes it through a Business Rules Engine. This ensures that human fraud analysts are empowered to make the final call on complex cases, perfectly balancing security with customer experience.
+            </div>
+
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">🔄 Sentinel AI Decision Pipeline</div></div>
+                <div class="panel-body">
+                    <div class="decision-flow" id="decisionFlow">
+                        <div class="flow-box" id="step1">Customer Initiates Transaction</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" id="step2">Sentinel AI Risk Assessment</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" id="step3">Dynamic Probability Score</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" id="step4">Business Rules Engine</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" id="step5">Analyst Action / Final Decision</div>
+                    </div>
+
+                    <div style="margin-top:24px; display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+                        <div style="padding:20px; background:var(--green-dim); border:1px solid rgba(63,185,80,0.2); border-radius:var(--radius-md); text-align:center; cursor:pointer; transition:all 0.2s;" onclick="simulateDecision('low')" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="font-size:32px; font-weight:800; font-family:var(--font-mono); color:var(--accent-green);">&lt;30%</div>
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-green); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">Low Risk</div>
+                            <div style="font-size:13px; color:var(--text-secondary); margin-top:12px; line-height:1.5;">Approve immediately<br />Seamless CX, no friction</div>
+                        </div>
+                        <div style="padding:20px; background:var(--blue-dim); border:1px solid rgba(88,166,255,0.2); border-radius:var(--radius-md); text-align:center; cursor:pointer; transition:all 0.2s;" onclick="simulateDecision('medium')" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="font-size:32px; font-weight:800; font-family:var(--font-mono); color:var(--accent-blue);">30–70%</div>
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-blue); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">Medium Risk</div>
+                            <div style="font-size:13px; color:var(--text-secondary); margin-top:12px; line-height:1.5;">Step-up authentication<br />OTP or biometric verification</div>
+                        </div>
+                        <div style="padding:20px; background:var(--orange-dim); border:1px solid rgba(210,153,34,0.2); border-radius:var(--radius-md); text-align:center; cursor:pointer; transition:all 0.2s;" onclick="simulateDecision('high')" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="font-size:32px; font-weight:800; font-family:var(--font-mono); color:var(--accent-orange);">70–95%</div>
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-orange); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">High Risk</div>
+                            <div style="font-size:13px; color:var(--text-secondary); margin-top:12px; line-height:1.5;">Hold &amp; route to analyst<br />Prioritized alert with reasons</div>
+                        </div>
+                        <div style="padding:20px; background:var(--red-dim); border:1px solid rgba(248,81,73,0.2); border-radius:var(--radius-md); text-align:center; cursor:pointer; transition:all 0.2s;" onclick="simulateDecision('critical')" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="font-size:32px; font-weight:800; font-family:var(--font-mono); color:var(--accent-red);">&gt;95%</div>
+                            <div style="font-size:12px; font-weight:700; color:var(--accent-red); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">Critical</div>
+                            <div style="font-size:13px; color:var(--text-secondary); margin-top:12px; line-height:1.5;">Immediate freeze<br />High-confidence fraud pattern</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" id="workflowResult" style="display:none;">
+                <div class="panel-header"><div class="panel-title">📋 Simulation Result</div></div>
+                <div class="panel-body" id="workflowResultBody"></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">🛡️ Graduated Response to False Positives</div></div>
+                    <div class="panel-body">
+                        <div style="font-size:13px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px;">
+                            When a legitimate transaction is flagged, the bank does not block it permanently. Instead, a <strong>graduated response</strong> is triggered to preserve customer trust while ensuring security:
+                        </div>
+                        <div class="explain-list">
+                            <div class="explain-item"><div class="explain-check">1</div><div class="explain-text">Transaction is <strong>temporarily held</strong> (not blocked)</div></div>
+                            <div class="explain-item"><div class="explain-check">2</div><div class="explain-text">Customer receives <strong>OTP via SMS</strong> or push notification</div></div>
+                            <div class="explain-item"><div class="explain-check">3</div><div class="explain-text">Customer enters OTP or uses <strong>biometric verification</strong></div></div>
+                            <div class="explain-item"><div class="explain-check">4</div><div class="explain-text">Transaction <strong>proceeds automatically</strong></div></div>
+                            <div class="explain-item"><div class="explain-check">5</div><div class="explain-text">Model learns from the confirmation to reduce future false positives</div></div>
+                        </div>
+                        <div class="narrative" style="margin-top:16px; margin-bottom:0;">
+                            <strong>Result:</strong> The 56 false positives today caused <strong>zero financial loss</strong> and <strong>zero permanent blocks</strong>. Customers experienced a brief, acceptable 30-second verification step.
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">🚨 Managing the Model Gap (False Negatives)</div></div>
+                    <div class="panel-body">
+                        <div style="font-size:13px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px;">
+                            The 16 missed frauds represent our primary optimization target. Here's the true cost breakdown and mitigation strategy:
+                        </div>
+                        <div class="explain-list">
+                            <div class="explain-item"><div class="explain-check" style="background:var(--red-dim);color:var(--accent-red);">$</div><div class="explain-text"><strong>Direct theft:</strong> R400,000 exposed from customer accounts</div></div>
+                            <div class="explain-item"><div class="explain-check" style="background:var(--red-dim);color:var(--accent-red);">$</div><div class="explain-text"><strong>Reimbursement:</strong> Bank must refund affected customers per regulatory mandate</div></div>
+                            <div class="explain-item"><div class="explain-check" style="background:var(--red-dim);color:var(--accent-red);">$</div><div class="explain-text"><strong>Investigation cost:</strong> Analyst hours, forensic tracing, regulatory reporting</div></div>
+                            <div class="explain-item"><div class="explain-check" style="background:var(--red-dim);color:var(--accent-red);">$</div><div class="explain-text"><strong>Reputational damage:</strong> Customer churn and trust erosion</div></div>
+                        </div>
+                        <div class="narrative" style="border-left-color:var(--accent-red); margin-top:16px; margin-bottom:0;">
+                            <strong>Why this matters:</strong> Reducing false negatives from 16 to 8 is our primary Q3 objective, which would save an additional <strong>R200,000 per month</strong>. This targeted optimization is driven by the explainability data Sentinel AI provides.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ANALYST VIEW ==================== -->
+        <div class="section" id="section-analyst">
+            <div class="narrative">
+                <strong>Empowering the Fraud Analyst:</strong> Instead of drowning in a sea of undifferentiated alerts, Sentinel AI <strong>prioritizes</strong> the highest-risk cases, <strong>explains exactly why</strong> they are suspicious using interpretable machine learning, and <strong>recommends the next best action</strong>. This transforms the analyst's role from manual data gathering to high-value, rapid decision-making.
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">📥 Prioritized Alert Queue (Analyst Worklist)</div><span class="badge badge-critical">6 Critical</span></div>
+                    <div class="panel-body" style="padding:0;">
+                        <div class="tx-stream" id="analystQueue"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">🔍 Explainable AI — Risk Drivers</div><span class="badge badge-critical" id="currentRiskBadge">98% Risk</span></div>
+                    <div class="panel-body" id="explainPanel">
+                        <div class="gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 200 120">
+                                <defs>
+                                    <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:var(--accent-green)" />
+                                        <stop offset="50%" style="stop-color:var(--accent-orange)" />
+                                        <stop offset="100%" style="stop-color:var(--accent-red)" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--bg-hover)" stroke-width="14" stroke-linecap="round" />
+                                <path id="analystGaugeArc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="5" style="transition:stroke-dashoffset 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);" />
+                                <text id="analystGaugeText" x="100" y="75" text-anchor="middle" fill="var(--accent-red)" font-family="var(--font-mono)" font-size="32" font-weight="800">98%</text>
+                                <text x="100" y="95" text-anchor="middle" fill="var(--text-tertiary)" font-family="var(--font-sans)" font-size="9" font-weight="700" letter-spacing="1">FRAUD PROBABILITY</text>
+                            </svg>
+                        </div>
+
+                        <div style="margin-bottom:20px; text-align:center;">
+                            <div style="font-size:18px; font-weight:700; margin-bottom:4px;" id="currentTxId">Transaction #TXN-981273</div>
+                            <div style="font-size:13px; color:var(--text-secondary);" id="currentTxMeta">CASH_OUT · KES 45,000 · John Ochieng</div>
+                        </div>
+
+                        <div class="explain-list" id="explainList">
+                            <div class="explain-item"><div class="explain-check">✓</div><div class="explain-text">Large transfer amount — <strong>37x above 90-day average</strong></div></div>
+                            <div class="explain-item"><div class="explain-check">✓</div><div class="explain-text">CASH_OUT transaction type — <strong>highest historical fraud correlation</strong></div></div>
+                            <div class="explain-item"><div class="explain-check">✓</div><div class="explain-text">Origin balance depleted to <strong>zero</strong> post-transaction</div></div>
+                            <div class="explain-item"><div class="explain-check">✓</div><div class="explain-text">Destination account <strong>created 4 days ago</strong>, no transactional history</div></div>
+                            <div class="explain-item"><div class="explain-check">✓</div><div class="explain-text">New device fingerprint — <strong>registered 2 hours ago</strong></div></div>
+                            <div class="explain-item"><div class="explain-check">✓</div><div class="explain-text">SIM swap event detected on telco network <strong>14 minutes prior</strong></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">⚡ Recommended Actions</div></div>
+                <div class="panel-body">
+                    <div class="action-grid" style="grid-template-columns:repeat(4,1fr);">
+                        <div class="action-btn primary" onclick="analystAction('OTP requested and sent to customer','success')">
+                            <div style="font-size:22px; margin-bottom:6px;">📱</div>
+                            <div>Request OTP</div>
+                            <div style="font-size:10px; color:var(--text-tertiary); margin-top:4px; font-weight:500; text-transform:none;">Recommended</div>
+                        </div>
+                        <div class="action-btn danger" onclick="analystAction('Transaction blocked and account frozen','error')">
+                            <div style="font-size:22px; margin-bottom:6px;">🔒</div>
+                            <div>Freeze Account</div>
+                            <div style="font-size:10px; color:var(--text-tertiary); margin-top:4px; font-weight:500; text-transform:none;">Emergency</div>
+                        </div>
+                        <div class="action-btn" onclick="analystAction('Case escalated to L3 senior analyst','info')">
+                            <div style="font-size:22px; margin-bottom:6px;">⬆️</div>
+                            <div>Escalate to L3</div>
+                            <div style="font-size:10px; color:var(--text-tertiary); margin-top:4px; font-weight:500; text-transform:none;">Complex case</div>
+                        </div>
+                        <div class="action-btn success" onclick="analystAction('Transaction approved — customer verified identity','success')">
+                            <div style="font-size:22px; margin-bottom:6px;">✅</div>
+                            <div>Approve</div>
+                            <div style="font-size:10px; color:var(--text-tertiary); margin-top:4px; font-weight:500; text-transform:none;">If verified</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">📝 Investigation Notes</div></div>
+                <div class="panel-body">
+                    <div id="analystNotes" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+                        <div style="padding:14px; background:var(--bg-elevated); border-radius:var(--radius-md); border:1px solid var(--border-subtle); border-left:3px solid var(--accent-purple);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="font-size:11px; font-weight:700; color:var(--accent-purple);">AI System</span><span style="font-size:10px; color:var(--text-tertiary); font-family:var(--font-mono);">14:32:05</span></div>
+                            <div style="font-size:12px; color:var(--text-secondary); line-height:1.6;">Auto-generated: Device fingerprint mismatch. SIM swap detected 14 min prior. Confidence: 98.3%</div>
+                        </div>
+                        <div style="padding:14px; background:var(--bg-elevated); border-radius:var(--radius-md); border:1px solid var(--border-subtle); border-left:3px solid var(--accent-blue);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="font-size:11px; font-weight:700; color:var(--accent-blue);">K. Mwangi</span><span style="font-size:10px; color:var(--text-tertiary); font-family:var(--font-mono);">14:33:12</span></div>
+                            <div style="font-size:12px; color:var(--text-secondary); line-height:1.6;">Confirmed SIM swap with telco logs. Customer called – phone stolen. Blocking transaction and freezing account.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="analystNoteInput" placeholder="Add investigation note..." style="flex:1; background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:10px 14px; color:var(--text-primary); font-size:13px; outline:none; font-family:var(--font-sans);" onkeydown="if(event.key==='Enter') addAnalystNote()">
+                        <button class="action-btn primary" style="min-width:80px;" onclick="addAnalystNote()">Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== LIVE SIMULATION ==================== -->
+        <div class="section" id="section-live">
+            <div class="narrative">
+                <strong>Real-Time Operational Monitoring:</strong> Watch as Sentinel AI processes live transaction streams. This dashboard allows the Executive Committee and Risk Operations leaders to monitor operational risk in real-time, ensuring the platform is actively protecting capital while maintaining optimal customer experience metrics.
+            </div>
+
+            <div class="grid-4">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="liveTotalTx">0</div>
+                    <div class="kpi-label">Transactions Processed</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" style="color:var(--accent-green)" id="liveApproved">0</div>
+                    <div class="kpi-label">Approved (Seamless CX)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" style="color:var(--accent-blue)" id="liveVerified">0</div>
+                    <div class="kpi-label">OTP Verified (Managed Friction)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" style="color:var(--accent-red)" id="liveBlocked">0</div>
+                    <div class="kpi-label">Blocked / Frozen (Capital Protected)</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">📡 Live Transaction Stream</div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span class="badge badge-safe" id="simStatus">Running</span>
+                            <button class="action-btn" style="padding:6px 12px; font-size:11px;" onclick="toggleSimulation()" id="simToggleBtn">⏸ Pause</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="padding:0;">
+                        <div class="tx-stream" id="liveStream" style="max-height:500px;"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="panel" style="margin-bottom:20px;">
+                        <div class="panel-header"><div class="panel-title">💰 Cumulative Financial Impact</div></div>
+                        <div class="panel-body">
+                            <div class="impact-calc">
+                                <div class="impact-number" style="font-size:36px;" id="liveMoneySaved">R0</div>
+                                <div class="impact-label">Fraud losses prevented in this session</div>
+                                <div class="impact-formula" id="liveFormula">0 frauds caught × R25,000 = R0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header"><div class="panel-title">📊 Decision Distribution</div></div>
+                        <div class="panel-body">
+                            <div style="display:flex; flex-direction:column; gap:12px;">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:var(--text-secondary);">Approved Immediately (&lt;30%)</span><span style="font-family:var(--font-mono); font-weight:700;" id="distLow">0%</span></div>
+                                    <div style="height:8px; background:var(--bg-hover); border-radius:4px; overflow:hidden;"><div id="barLow" style="height:100%; width:0%; background:var(--accent-green); border-radius:4px; transition:width 0.5s ease;"></div></div>
+                                </div>
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:var(--text-secondary);">OTP Required (30–70%)</span><span style="font-family:var(--font-mono); font-weight:700;" id="distMed">0%</span></div>
+                                    <div style="height:8px; background:var(--bg-hover); border-radius:4px; overflow:hidden;"><div id="barMed" style="height:100%; width:0%; background:var(--accent-blue); border-radius:4px; transition:width 0.5s ease;"></div></div>
+                                </div>
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:var(--text-secondary);">Held for Review (70–95%)</span><span style="font-family:var(--font-mono); font-weight:700;" id="distHigh">0%</span></div>
+                                    <div style="height:8px; background:var(--bg-hover); border-radius:4px; overflow:hidden;"><div id="barHigh" style="height:100%; width:0%; background:var(--accent-orange); border-radius:4px; transition:width 0.5s ease;"></div></div>
+                                </div>
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:var(--text-secondary);">Frozen (&gt;95%)</span><span style="font-family:var(--font-mono); font-weight:700;" id="distCrit">0%</span></div>
+                                    <div style="height:8px; background:var(--bg-hover); border-radius:4px; overflow:hidden;"><div id="barCrit" style="height:100%; width:0%; background:var(--accent-red); border-radius:4px; transition:width 0.5s ease;"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==========================================
+        // DATA
+        // ==========================================
+        const NAMES = ['John Ochieng', 'Sarah Wanjiku', 'David Kamau', 'Amina Hassan', 'Peter Omondi', 'Grace Muthoni',
+            'James Kariuki', 'Lucy Wambui', 'Brian Mutua', 'Alice Akinyi', 'Chloe Njeri', 'Daniel Kipchoge', 'Esther Mwangi',
+            'Francis Oduor'
+        ];
+        const TYPES = ['CASH_OUT', 'TRANSFER', 'PAYMENT', 'DEBIT'];
+        const DESTS = ['TILL-448291', 'ACC-77210', 'TILL-11029', 'ACC-99281', 'TILL-88372', 'ACC-44102', 'TILL-22910',
+            'ACC-88102'
+        ];
+
+        const ANALYST_CASES = [
+            { id: 'TXN-981273', name: 'John Ochieng', amount: 45000, prob: 0.98, type: 'CASH_OUT', time: '14:32:01' },
+            { id: 'TXN-981271', name: 'Sarah Wanjiku', amount: 120000, prob: 0.95, type: 'TRANSFER', time: '14:28:15' },
+            { id: 'TXN-981269', name: 'David Kamau', amount: 8500, prob: 0.89, type: 'CASH_OUT', time: '14:25:44' },
+            { id: 'TXN-981265', name: 'Amina Hassan', amount: 32000, prob: 0.72, type: 'PAYMENT', time: '14:22:10' },
+            { id: 'TXN-981261', name: 'Peter Omondi', amount: 15000, prob: 0.45, type: 'TRANSFER', time: '14:18:55' },
+            { id: 'TXN-981258', name: 'Grace Muthoni', amount: 5000, prob: 0.22, type: 'PAYMENT', time: '14:15:30' },
+        ];
+
+        // ==========================================
+        // MODE SWITCHING
+        // ==========================================
+        function switchMode(mode, btn) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById('section-' + mode).classList.add('active');
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // ==========================================
+        // MATRIX DETAIL
+        // ==========================================
+        function showMatrixDetail(type) {
+            const panel = document.getElementById('matrixDetail');
+            const content = {
+                tn: `<div style="animation:fadeIn 0.3s ease">
+          <div style="font-size:48px; font-weight:800; font-family:var(--font-mono); color:var(--accent-green); margin-bottom:8px;">127,027</div>
+          <div style="font-size:16px; font-weight:700; margin-bottom:12px;">Genuine Customers — Zero Friction</div>
+          <div style="color:var(--text-secondary); line-height:1.7; font-size:13px;">
+            These are legitimate transactions that the model correctly identified as safe. <strong>99.96% of all genuine transactions</strong> passed through without any friction, delay, or customer inconvenience. This is the silent success of fraud detection — the vast majority of customers never know the system exists, preserving their trust in Standard Bank.
+          </div>
+          <div style="margin-top:16px; padding:16px; background:var(--green-dim); border-radius:var(--radius-md); border:1px solid rgba(63,185,80,0.2);">
+            <div style="font-size:12px; font-weight:700; color:var(--accent-green); margin-bottom:4px;">BUSINESS IMPACT</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Customer trust preserved. No OTP delays. No false anxiety. Business operates smoothly at scale.</div>
+          </div>
+        </div>`,
+                fp: `<div style="animation:fadeIn 0.3s ease">
+          <div style="font-size:48px; font-weight:800; font-family:var(--font-mono); color:var(--accent-orange); margin-bottom:8px;">56</div>
+          <div style="font-size:16px; font-weight:700; margin-bottom:12px;">Manageable Friction — Extra Security Step</div>
+          <div style="color:var(--text-secondary); line-height:1.7; font-size:13px;">
+            These 56 legitimate transactions were flagged. Instead of bluntly blocking them, the bank initiated <strong>step-up authentication (OTP verification)</strong>. Customers entered their codes and transactions proceeded. <strong>Zero financial loss. Zero permanent blocks.</strong>
+          </div>
+          <div style="margin-top:16px; padding:16px; background:var(--orange-dim); border-radius:var(--radius-md); border:1px solid rgba(210,153,34,0.2);">
+            <div style="font-size:12px; font-weight:700; color:var(--accent-orange); margin-bottom:4px;">BUSINESS IMPACT</div>
+            <div style="font-size:13px; color:var(--text-secondary);">56 customers experienced a 30-second OTP step. In exchange, the bank caught 154 real frauds. A highly optimized, acceptable trade-off.</div>
+          </div>
+        </div>`,
+                fn: `<div style="animation:fadeIn 0.3s ease">
+          <div style="font-size:48px; font-weight:800; font-family:var(--font-mono); color:var(--accent-red); margin-bottom:8px;">16</div>
+          <div style="font-size:16px; font-weight:700; margin-bottom:12px;">Escaped Fraud — The Optimization Target</div>
+          <div style="color:var(--text-secondary); line-height:1.7; font-size:13px;">
+            These 16 fraudulent transactions were not caught by the initial model pass. They represent <strong>direct financial exposure</strong>, reimbursement costs, investigation hours, and regulatory scrutiny. At R25,000 average per fraud, that's <strong>R400,000 at risk</strong>.
+          </div>
+          <div style="margin-top:16px; padding:16px; background:var(--red-dim); border-radius:var(--radius-md); border:1px solid rgba(248,81,73,0.2);">
+            <div style="font-size:12px; font-weight:700; color:var(--accent-red); margin-bottom:4px;">BUSINESS IMPACT</div>
+            <div style="font-size:13px; color:var(--text-secondary);">R400,000 exposed. However, Sentinel AI's explainability logs these exact patterns, making this our #1 targeted optimization area for the next model iteration to drive this number toward zero.</div>
+          </div>
+        </div>`,
+                tp: `<div style="animation:fadeIn 0.3s ease">
+          <div style="font-size:48px; font-weight:800; font-family:var(--font-mono); color:var(--accent-green); margin-bottom:8px;">154</div>
+          <div style="font-size:16px; font-weight:700; margin-bottom:12px;">Frauds Successfully Intercepted</div>
+          <div style="color:var(--text-secondary); line-height:1.7; font-size:13px;">
+            The model correctly identified 154 fraudulent transactions. Fraud analysts reviewed the prioritized alerts, confirmed the patterns using explainable AI, and <strong>blocked the transactions before funds left the bank</strong>. At R25,000 per fraud, that's <strong>R3.85 million protected</strong> in a single day.
+          </div>
+          <div style="margin-top:16px; padding:16px; background:var(--green-dim); border-radius:var(--radius-md); border:1px solid rgba(63,185,80,0.2);">
+            <div style="font-size:12px; font-weight:700; color:var(--accent-green); margin-bottom:4px;">BUSINESS IMPACT</div>
+            <div style="font-size:13px; color:var(--text-secondary);">R3.85M saved. Customer accounts protected. Regulatory compliance maintained. Fraud syndicates actively deterred.</div>
+          </div>
+        </div>`
+            };
+            panel.innerHTML = content[type] || content.tn;
+        }
+
+        // ==========================================
+        // DECISION WORKFLOW SIMULATION
+        // ==========================================
+        function simulateDecision(level) {
+            const resultPanel = document.getElementById('workflowResult');
+            const resultBody = document.getElementById('workflowResultBody');
+            const scenarios = {
+                low: {
+                    title: 'Low Risk Transaction Approved',
+                    prob: '12%',
+                    color: 'var(--accent-green)',
+                    desc: 'A customer pays their electricity bill of R450. The model recognizes this as a recurring PAYBILL to a known merchant from a trusted device. Probability: 12%.',
+                    action: 'Transaction approved immediately. No customer friction. No OTP required.',
+                    outcome: '✅ Customer experience: Seamless. Processing time: 0.3 seconds. Trust maintained.',
+                    bg: 'var(--green-dim)',
+                    border: 'rgba(63,185,80,0.2)'
+                },
+                medium: {
+                    title: 'Medium Risk — Step-Up Authentication Required',
+                    prob: '52%',
+                    color: 'var(--accent-blue)',
+                    desc: 'A customer transfers R8,000 to a new recipient. The amount is 3x their average, but the device fingerprint is known and trusted. Probability: 52%.',
+                    action: 'System triggers step-up authentication, sending an OTP via SMS. Customer enters code within 45 seconds. Transaction proceeds securely.',
+                    outcome: '✅ Customer experience: Minor, acceptable friction (45s). Fraud deterred. Legitimate transaction successfully completed.',
+                    bg: 'var(--blue-dim)',
+                    border: 'rgba(88,166,255,0.2)'
+                },
+                high: {
+                    title: 'High Risk — Transaction Held for Analyst Review',
+                    prob: '81%',
+                    color: 'var(--accent-orange)',
+                    desc: 'A CASH_OUT of R32,000 to a recently created agent till. The device is known, but the destination account exhibits suspicious behavioral patterns. Probability: 81%.',
+                    action: 'Transaction is temporarily held. Fraud analyst K. Mwangi receives a prioritized alert with explainable AI risk drivers. Customer is notified of a brief security delay.',
+                    outcome: '⏳ Analyst investigates using Sentinel AI insights. If legitimate: release. If fraud: block and freeze. Average resolution: 4 minutes.',
+                    bg: 'var(--orange-dim)',
+                    border: 'rgba(210,153,34,0.2)'
+                },
+                critical: {
+                    title: 'Critical — Account Frozen Immediately',
+                    prob: '98%',
+                    color: 'var(--accent-red)',
+                    desc: 'A CASH_OUT of R45,000 drains the account to zero. New device fingerprint. SIM swap detected on telco network 14 minutes ago. Destination till created 4 days ago. Probability: 98%.',
+                    action: 'Transaction blocked instantly. Account temporarily frozen. Customer contacted via alternate channel. Urgent fraud investigation initiated.',
+                    outcome: '🔒 R45,000 saved. Account protected. SIM swap confirmed. Customer reimbursed for stolen device, trust preserved.',
+                    bg: 'var(--red-dim)',
+                    border: 'rgba(248,81,73,0.2)'
+                }
+            };
+            const s = scenarios[level];
+            resultPanel.style.display = 'block';
+            resultBody.innerHTML = `
+            <div style="animation:fadeIn 0.4s ease">
+              <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+                <div style="font-size:48px; font-weight:800; font-family:var(--font-mono); color:${s.color};">${s.prob}</div>
+                <div>
+                  <div style="font-size:18px; font-weight:700;">${s.title}</div>
+                  <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">${s.desc}</div>
+                </div>
+              </div>
+              <div style="background:${s.bg}; border:1px solid ${s.border}; border-radius:var(--radius-md); padding:16px; margin-bottom:12px;">
+                <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; color:${s.color};">Business Action</div>
+                <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">${s.action}</div>
+              </div>
+              <div style="font-size:13px; color:var(--text-secondary); padding:12px; background:var(--bg-elevated); border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+                <strong>Outcome:</strong> ${s.outcome}
+              </div>
+            </div>
+          `;
+
+            document.querySelectorAll('.flow-box').forEach(b => b.classList.remove('active', 'critical', 'success'));
+            document.getElementById('step1').classList.add('active');
+            setTimeout(() => document.getElementById('step2').classList.add('active'), 300);
+            setTimeout(() => document.getElementById('step3').classList.add('active'), 600);
+            setTimeout(() => document.getElementById('step4').classList.add('active'), 900);
+            setTimeout(() => {
+                const step5 = document.getElementById('step5');
+                step5.classList.add('active');
+                if (level === 'critical') step5.classList.add('critical');
+                if (level === 'low') step5.classList.add('success');
+            }, 1200);
+        }
+
+        // ==========================================
+        // ANALYST QUEUE
+        // ==========================================
+        function renderAnalystQueue() {
+            const container = document.getElementById('analystQueue');
+            if (!container) return;
+            container.innerHTML = ANALYST_CASES.map((c, i) => {
+                const riskColor = c.prob > 0.9 ? 'var(--accent-red)' : c.prob > 0.7 ? 'var(--accent-orange)' :
+                    'var(--accent-blue)';
+                return `<div class="tx-item" onclick="loadCase(${i})" style="${i===0?'background:var(--bg-hover); border-left:3px solid var(--accent-red);':''}">
+              <div class="tx-avatar" style="background:${c.prob>0.9?'var(--red-dim)':c.prob>0.7?'var(--orange-dim)':'var(--blue-dim)'}; color:${riskColor}; border-color:${c.prob>0.9?'rgba(248,81,73,0.3)':c.prob>0.7?'rgba(210,153,34,0.3)':'rgba(88,166,255,0.3)'};">${(c.prob*100).toFixed(0)}%</div>
+              <div class="tx-info">
+                <div class="tx-name">${c.name}</div>
+                <div class="tx-meta">${c.id} · ${c.type} · ${c.time}</div>
+              </div>
+              <div class="tx-amount" style="color:${riskColor};">R${c.amount.toLocaleString()}</div>
+            </div>`;
+            }).join('');
+        }
+
+        // ==========================================
+        // ANIMATED GAUGE — the core fix for "moving 98"
+        // ==========================================
+        let currentDisplayedProb = 0.98;
+        let gaugeAnimId = null;
+
+        function animateGaugeTo(targetProb, duration = 800) {
+            const start = currentDisplayedProb;
+            const diff = targetProb - start;
+            if (Math.abs(diff) < 0.001) {
+                currentDisplayedProb = targetProb;
+                updateGaugeDisplay(targetProb);
+                return;
+            }
+            const startTime = performance.now();
+
+            if (gaugeAnimId) cancelAnimationFrame(gaugeAnimId);
+
+            function tick(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // easeOutCubic: smooth deceleration
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = start + diff * eased;
+                currentDisplayedProb = current;
+                updateGaugeDisplay(current);
+
+                if (progress < 1) {
+                    gaugeAnimId = requestAnimationFrame(tick);
+                } else {
+                    currentDisplayedProb = targetProb;
+                    updateGaugeDisplay(targetProb);
+                    gaugeAnimId = null;
+                }
+            }
+            gaugeAnimId = requestAnimationFrame(tick);
+        }
+
+        function updateGaugeDisplay(prob) {
+            const pct = Math.round(prob * 100);
+            // Update SVG text
+            const textEl = document.getElementById('analystGaugeText');
+            if (textEl) {
+                textEl.textContent = pct + '%';
+                // Color based on value
+                if (prob > 0.9) textEl.setAttribute('fill', 'var(--accent-red)');
+                else if (prob > 0.7) textEl.setAttribute('fill', 'var(--accent-orange)');
+                else if (prob > 0.3) textEl.setAttribute('fill', 'var(--accent-blue)');
+                else textEl.setAttribute('fill', 'var(--accent-green)');
+            }
+
+            // Update badge
+            const badge = document.getElementById('currentRiskBadge');
+            if (badge) {
+                badge.textContent = pct + '% Risk';
+                badge.className = 'badge ' + (prob > 0.9 ? 'badge-critical' : prob > 0.7 ? 'badge-warn' : prob > 0.3 ?
+                    'badge-blue' : 'badge-safe');
+            }
+
+            // Update gauge arc — CSS transition handles the smoothness
+            const arc = document.getElementById('analystGaugeArc');
+            if (arc) {
+                const circumference = 251.3;
+                const offset = circumference - (circumference * prob);
+                arc.style.strokeDashoffset = offset;
+            }
+        }
+
+        // ==========================================
+        // LOAD CASE — with animated gauge
+        // ==========================================
+        function loadCase(idx) {
+            const c = ANALYST_CASES[idx];
+            if (!c) return;
+
+            // Update transaction metadata
+            document.getElementById('currentTxId').textContent = 'Transaction #' + c.id;
+            document.getElementById('currentTxMeta').textContent = c.type + ' · KES ' + c.amount.toLocaleString() + ' · ' + c
+                .name;
+
+            // Animate the gauge to the new probability
+            animateGaugeTo(c.prob, 800);
+
+            // Update explain list
+            const explanations = [
+                `Large transfer amount — <strong>${Math.floor(c.amount/1200)}x above 90-day average</strong>`,
+                `${c.type} transaction type — <strong>${c.prob > 0.8 ? 'highest historical' : 'elevated'} fraud correlation</strong>`,
+                `Origin balance ${c.amount > 30000 ? 'depleted to <strong>zero</strong> post-transaction' : 'reduced by <strong>' + Math.floor(c.amount/500)*5 + '%</strong>'}`,
+                `Destination account <strong>${c.prob > 0.8 ? 'created recently' : 'has limited history'}</strong>`,
+                `Device fingerprint <strong>${c.prob > 0.8 ? 'mismatch — new device' : 'partial match'}</strong>`,
+                `Transaction velocity <strong>${c.prob > 0.8 ? 'anomalous' : 'slightly elevated'}</strong> for this customer`
+            ];
+            document.getElementById('explainList').innerHTML = explanations.map(e =>
+                `<div class="explain-item"><div class="explain-check">✓</div><div class="explain-text">${e}</div></div>`
+            ).join('');
+
+            // Highlight in queue
+            renderAnalystQueue();
+            const items = document.querySelectorAll('#analystQueue .tx-item');
+            const riskColor = c.prob > 0.9 ? 'var(--accent-red)' : c.prob > 0.7 ? 'var(--accent-orange)' :
+            'var(--accent-blue)';
+            items.forEach((item, i) => {
+                item.style.background = i === idx ? 'var(--bg-hover)' : '';
+                item.style.borderLeft = i === idx ? '3px solid ' + riskColor : '';
+            });
+        }
+
+        // ==========================================
+        // ANALYST ACTIONS
+        // ==========================================
+        function analystAction(action, type) {
+            showToast(action, type);
+        }
+
+        function addAnalystNote() {
+            const input = document.getElementById('analystNoteInput');
+            if (!input.value.trim()) return;
+            const container = document.getElementById('analystNotes');
+            const now = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.style.cssText =
+                'padding:14px; background:var(--bg-elevated); border-radius:var(--radius-md); border:1px solid var(--border-subtle); border-left:3px solid var(--accent-blue); animation:slideIn 0.3s ease;';
+            div.innerHTML =
+                `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="font-size:11px; font-weight:700; color:var(--accent-blue);">You</span><span style="font-size:10px; color:var(--text-tertiary); font-family:var(--font-mono);">${now}</span></div><div style="font-size:12px; color:var(--text-secondary); line-height:1.6;">${input.value}</div>`;
+            container.insertBefore(div, container.firstChild);
+            input.value = '';
+            showToast('Note added to case file', 'success');
+        }
+
+        // ==========================================
+        // LIVE SIMULATION
+        // ==========================================
+        let simRunning = true;
+        let simInterval = null;
+        let simStats = { total: 0, approved: 0, verified: 0, blocked: 0, fraudsCaught: 0, fraudsMissed: 0 };
+
+        function generateTransaction() {
+            const name = NAMES[Math.floor(Math.random() * NAMES.length)];
+            const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+            const amount = Math.floor(Math.random() * 90000) + 1000;
+            const prob = Math.random();
+            const isFraud = prob > 0.85 && Math.random() > 0.3;
+
+            simStats.total++;
+            let decision, decisionColor, decisionIcon;
+
+            if (prob < 0.3) {
+                simStats.approved++;
+                decision = 'Approved';
+                decisionColor = 'var(--accent-green)';
+                decisionIcon = '✓';
+            } else if (prob < 0.7) {
+                simStats.verified++;
+                decision = 'OTP Sent';
+                decisionColor = 'var(--accent-blue)';
+                decisionIcon = '🔐';
+            } else if (prob < 0.95) {
+                simStats.blocked++;
+                decision = 'Held';
+                decisionColor = 'var(--accent-orange)';
+                decisionIcon = '⏸';
+            } else {
+                simStats.blocked++;
+                decision = 'Frozen';
+                decisionColor = 'var(--accent-red)';
+                decisionIcon = '🔒';
+            }
+
+            if (isFraud && prob > 0.7) simStats.fraudsCaught++;
+            if (isFraud && prob < 0.7) simStats.fraudsMissed++;
+
+            const stream = document.getElementById('liveStream');
+            if (!stream) return;
+
+            const item = document.createElement('div');
+            item.className = 'tx-item';
+            item.style.borderLeft = `3px solid ${decisionColor}`;
+            item.innerHTML = `
+            <div class="tx-avatar" style="background:${prob > 0.7 ? 'var(--red-dim)' : prob > 0.3 ? 'var(--blue-dim)' : 'var(--green-dim)'}; color:${prob > 0.7 ? 'var(--accent-red)' : prob > 0.3 ? 'var(--accent-blue)' : 'var(--accent-green)'}; border-color:transparent;">${decisionIcon}</div>
+            <div class="tx-info">
+              <div class="tx-name">${name}</div>
+              <div class="tx-meta">${type} · R${amount.toLocaleString()} · ${(prob*100).toFixed(0)}% risk</div>
+            </div>
+            <div class="tx-amount" style="color:${decisionColor}; font-size:11px;">${decision}</div>
+          `;
+            stream.insertBefore(item, stream.firstChild);
+            if (stream.children.length > 20) stream.lastElementChild.remove();
+
+            updateLiveStats();
+        }
+
+        function updateLiveStats() {
+            document.getElementById('liveTotalTx').textContent = simStats.total.toLocaleString();
+            document.getElementById('liveApproved').textContent = simStats.approved.toLocaleString();
+            document.getElementById('liveVerified').textContent = simStats.verified.toLocaleString();
+            document.getElementById('liveBlocked').textContent = simStats.blocked.toLocaleString();
+
+            const saved = simStats.fraudsCaught * 25000;
+            document.getElementById('liveMoneySaved').textContent = 'R' + (saved / 1000000).toFixed(2) + 'M';
+            document.getElementById('liveFormula').textContent = `${simStats.fraudsCaught} frauds caught × R25,000 = R${saved.toLocaleString()}`;
+
+            const total = simStats.total || 1;
+            document.getElementById('distLow').textContent = ((simStats.approved / total) * 100).toFixed(1) + '%';
+            document.getElementById('distMed').textContent = ((simStats.verified / total) * 100).toFixed(1) + '%';
+            document.getElementById('distHigh').textContent = ((simStats.blocked / total) * 100).toFixed(1) + '%';
+            document.getElementById('distCrit').textContent = '0.0%';
+
+            document.getElementById('barLow').style.width = ((simStats.approved / total) * 100) + '%';
+            document.getElementById('barMed').style.width = ((simStats.verified / total) * 100) + '%';
+            document.getElementById('barHigh').style.width = ((simStats.blocked / total) * 100) + '%';
+        }
+
+        function toggleSimulation() {
+            simRunning = !simRunning;
+            const btn = document.getElementById('simToggleBtn');
+            const status = document.getElementById('simStatus');
+            if (simRunning) {
+                btn.textContent = '⏸ Pause';
+                status.textContent = 'Running';
+                status.className = 'badge badge-safe';
+                startSimulation();
+            } else {
+                btn.textContent = '▶ Resume';
+                status.textContent = 'Paused';
+                status.className = 'badge badge-warn';
+                clearInterval(simInterval);
+            }
+        }
+
+        function startSimulation() {
+            if (simInterval) clearInterval(simInterval);
+            simInterval = setInterval(generateTransaction, 2000);
+        }
+
+        // ==========================================
+        // TOASTS
+        // ==========================================
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: '✓', error: '✕', info: 'ℹ' };
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.innerHTML = `<span style="font-weight:800; font-size:16px;">${icons[type]}</span> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ==========================================
+        // INIT
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial gauge to first case's probability
+            const firstProb = ANALYST_CASES[0].prob;
+            currentDisplayedProb = firstProb;
+            updateGaugeDisplay(firstProb);
+
+            renderAnalystQueue();
+            startSimulation();
+            // Pre-generate some transactions
+            for (let i = 0; i < 5; i++) generateTransaction();
+
+            // Load the first case with animation
+            setTimeout(() => loadCase(0), 300);
+        });
+    </script>
+</body>
+</html>
