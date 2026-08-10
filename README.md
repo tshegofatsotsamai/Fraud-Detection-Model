@@ -1,4 +1,4 @@
-# Sentinel AI — Intelligent Fraud Detection & Decision Support
+# Sentinel AI: Intelligent Fraud Detection & Decision Support
 
 ### PEAK TRANSFORMERS | Sol Plaatje University Data Science Club Finance & Digital Innovation Hackathon 2026
 
