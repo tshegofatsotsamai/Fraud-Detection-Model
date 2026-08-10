@@ -372,7 +372,3 @@ The final XGBoost model achieved **99.94% accuracy, 73.33% precision, 90.59% rec
 More importantly, the project demonstrates that fraud detection should not be viewed purely as a classification problem. The model's predictions need to be translated into meaningful operational decisions that balance **fraud prevention, customer experience and analyst efficiency**.
 
 **PEAK TRANSFORMERS** therefore proposed Sentinel AI as a framework for moving from simple fraud classification toward an intelligent, risk-aware fraud operations platform.
-
-## Disclaimer
-
-This project was developed for an academic/hackathon setting using simulated financial transaction data. It is a prototype and is **not an actual banking fraud detection system**. References to financial institutions, financial impact and operational workflows within the prototype are illustrative demonstrations of the proposed solution.
